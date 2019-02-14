@@ -1,31 +1,128 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+  <div>
+    <div id="app" ref="app" :class="{ 'blur': waiting.show }">
+      <div class="w1220">
+        <router-view/>
+        <div id="ljb-bulr-index"></div>
+      </div>
+      <div class="bg-fixed"></div>
     </div>
-    <router-view/>
+    <waiting :msg="waiting.msg" :show="waiting.show"></waiting>
+    <div class="app-loading-wrapper" :class="{ 'show': LoadingCompalte }" >
+      <loading class="app-loading"></loading>
+      <p>{{$t('i18n.SYS_LOADING')}}</p>
+    </div>
   </div>
 </template>
 
-<style>
+<script>
+import Waiting from '@/common/components/waiting/Waiting'
+import Loading from './common/components/loading/loading'
+import checkOS from '@/common/service/checkOS'
+export default {
+  name: 'App',
+  data: function() {
+    return {
+      waiting: {
+        msg: '',
+        show: false
+      },
+      LoadingCompalte: false
+    }
+  },
+  components: {
+    Waiting,
+    Loading
+  },
+  created() {
+    this.LoadingCompalte = true
+    this.$root.Bus.$on('waitingMaskShow', data => {
+      this.waiting = data
+    })
+    window.addEventListener('hashchange', () => {
+      const currentPath = window.location.hash.slice(1)
+      this.$router.push(currentPath)
+    })
+    this.$root.Bus.$on('HiddenAppLoading', () => {
+      this.LoadingCompalte = false
+    })
+  },
+  mounted() {
+    // this.$root.Bus.$emit('HiddenAppLoading')
+    let OS = checkOS()
+    if (OS) {
+      // 系统为移动端系统
+      window.location.href = window.location.protocol + '//' + window.location.host + '/mobile/'
+    }
+  },
+  beforeDestroy() {
+    this.$root.Bus.$off('waitingMaskShow')
+    this.$root.Bus.$off('HiddenAppLoading')
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+@import './common/sass/_utils.scss';
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  z-index: 2;
+  max-width: rem(1920px);
+  position: relative;
+  min-height: 100%;
   text-align: center;
-  color: #2c3e50;
+  margin: 0 auto;
+  .w1220 {
+    margin: 0 auto;
+    display: inline-block;
+    position: relative;
+    text-align: left;
+    margin-bottom: 30px;
+    z-index: 2;
+    width: 100%;
+  }
+  & > .bg-fixed {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      0deg,
+      rgba(238, 239, 242, 1),
+      rgba(216, 218, 225, 1)
+    );
+    z-index: 1;
+  }
 }
-#nav {
-  padding: 30px;
+.app-loading-wrapper {
+  position: fixed;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: 400px;
+  display: none;
+  &.show {
+    display: block;
+  }
+  .app-loading {
+    margin: 0 auto;
+  }
+  >p {
+    text-align: center;
+    margin-top: 15px;
+  }
 }
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+@media screen and (max-width: 1366px) {
+  #app {
+    .w1220 {
+      margin-top: 10px;
+    }
+  }
+  .app-loading-wrapper {
+    padding-top: 300px;
+  }
 }
 </style>
